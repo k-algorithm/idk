@@ -1,0 +1,59 @@
+[
+ {
+  "title": "Does Golang have something like C++\u0026#39;s decltype?",
+  "score": 4,
+  "view_count": 127,
+  "answer_count": 1
+ },
+ {
+  "title": "golang how to access promoted type",
+  "score": 3,
+  "view_count": 126,
+  "answer_count": 3
+ },
+ {
+  "title": "Interface of function in golang",
+  "score": 2,
+  "view_count": 604,
+  "answer_count": 1
+ },
+ {
+  "title": "Load image from url in golang",
+  "score": 2,
+  "view_count": 73,
+  "answer_count": 1
+ },
+ {
+  "title": "Python bytes() or bytesarray() counterpart in golang",
+  "score": 1,
+  "view_count": 155,
+  "answer_count": 1
+ },
+ {
+  "title": "How to set extension 41 and 34 in Golang?",
+  "view_count": 35
+ },
+ {
+  "title": "How can I destruct this in Golang?",
+  "view_count": 126,
+  "answer_count": 2
+ },
+ {
+  "title": "How can I get the name of a seller on a specific website using golang?",
+  "score": -1,
+  "view_count": 40,
+  "answer_count": 1
+ },
+ {
+  "title": "Why golang can not recover from a panic in a function called by the defer function",
+  "score": -2,
+  "view_count": 115,
+  "answer_count": 1
+ },
+ {
+  "title": "I don\u0026#39;t understand when to use pointers on go",
+  "score": -3,
+  "view_count": 638,
+  "answer_count": 2
+ }
+]
