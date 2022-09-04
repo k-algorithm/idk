@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/k-algorithm/idk/internal/search"
+	"github.com/k-algorithm/idk/internal/tui/search_result"
 )
 
 type state int
@@ -18,7 +18,7 @@ const (
 type model struct {
 	state         state
 	query         textinput.Model
-	searchResult  string
+	searchResult  search_result.BubbleSearchResult
 	width, height int
 	err           error
 }
@@ -39,17 +39,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyEnter:
-			questionString := ""
-			searchResult := search.Google(search.GoogleParam{
-				Query:    m.query.Value(),
-				PageSize: 10,
-			})
-			questions := search.Questions(searchResult.QuestionIDs)
-			for i, question := range questions {
-				questionString += fmt.Sprintf("[Question %d] %s\n", i+1, question.Title)
-			}
-			m.searchResult = questionString
-			return m, nil
+			m.searchResult.UpdateQuery(m.query.Value())
+			m.searchResult, cmd = m.searchResult.Update(msg)
 		}
 	}
 	m.query, cmd = m.query.Update(msg)
@@ -66,7 +57,7 @@ func (m model) View() string {
 		"\nWrite questions here...\n\n%s\n\n%s\n\n%s",
 		m.query.View(),
 		"(ctrl+c to quit)",
-		m.searchResult,
+		m.searchResult.View(),
 	) + "\n"
 }
 
