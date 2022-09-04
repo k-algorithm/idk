@@ -1,6 +1,7 @@
 package search
 
 import (
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -10,7 +11,7 @@ import (
 )
 
 const defaultUserAgent string = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0"
-const googleQueryPageSize int = 10
+const defaultGooglePageSize int = 10
 
 type Collector interface {
 	Visit(url string) error
@@ -31,16 +32,18 @@ func (c CollyCollector) Wait() {
 type GoogleResult struct {
 	QuestionIDs     []string
 	NextQuestionIdx int
-	NextOffset      int
+	NextGooglePage  int
 	IsFinished      bool
 }
 
 type GoogleParam struct {
-	Query           string
-	PageSize        int
-	Offset          int
-	NextQuestionIdx int
-	UserAgent       string
+	Query                 string
+	PageSize              int
+	GoogleStartPage       int
+	GoogleNextQuestionIdx int
+	GoogleMaxNumTrial     int
+	GooglePageSize        int
+	UserAgent             string
 }
 
 func (p *GoogleParam) FillDefaults() {
@@ -50,6 +53,12 @@ func (p *GoogleParam) FillDefaults() {
 	if p.UserAgent == "" {
 		p.UserAgent = defaultUserAgent
 	}
+	if p.GooglePageSize == 0 {
+		p.GooglePageSize = defaultGooglePageSize
+	}
+	if p.GoogleMaxNumTrial == 0 {
+		p.GoogleMaxNumTrial = int(p.PageSize/p.GooglePageSize) + 1
+	}
 }
 
 func parseQuestionID(url string) string {
@@ -57,6 +66,11 @@ func parseQuestionID(url string) string {
 	rawSlice := strings.Split(url, "url=")
 	// unexpected url format
 	if len(rawSlice) != 2 {
+		return ""
+	}
+	stackoverflowUrl := rawSlice[1]
+	if !strings.HasPrefix(stackoverflowUrl, "https://stackoverflow.com") {
+		log.Println("prefix no", stackoverflowUrl)
 		return ""
 	}
 	urlSlice := strings.Split(rawSlice[1], "/")
@@ -71,7 +85,7 @@ func parseQuestionID(url string) string {
 	return urlSlice[4]
 }
 
-func buildGoogleUrl(query string, start int) string {
+func buildGoogleUrl(query string, start int, num int) string {
 	u := url.URL{
 		Scheme: "https",
 		Host:   "google.com",
@@ -80,6 +94,7 @@ func buildGoogleUrl(query string, start int) string {
 	q := u.Query()
 	q.Set("q", "site: stackoverflow.com "+query)
 	q.Set("start", strconv.Itoa(start))
+	q.Set("num", strconv.Itoa(num))
 	u.RawQuery = q.Encode()
 	return u.String()
 }
@@ -92,6 +107,9 @@ func newCollector(userAgent string, idBuffer *[]string) *colly.Collector {
 		// Set header
 		colly.UserAgent((userAgent)),
 	)
+	c.OnError(func(r *colly.Response, err error) {
+		log.Println(err)
+	})
 	// Extract details of the course
 	c.OnHTML(`h3`, func(e *colly.HTMLElement) {
 		p := e.DOM.Parent()
@@ -109,35 +127,34 @@ func googleSearch(
 	query string,
 	c Collector,
 	idBuffer *[]string,
-	pageOffset int,
-	pageSize int,
-	qidOffset int,
+	userPageSize int,
+	googleStartPage int,
+	questionIdOffset int,
+	googlePageSize int,
+	googleMaxNumTrial int,
 ) GoogleResult {
 	// init variables for pagination
-	isFinished := false
-	questionIDs := make([]string, 0, pageSize)
+	questionIDs := make([]string, 0, userPageSize)
 	nextQuestionIdx := 0
-	currPageOffset := pageOffset
-
-	for (len(questionIDs) < pageSize) && (!isFinished) {
+	currGooglePage := googleStartPage
+	for numTrial := 0; (len(questionIDs) < userPageSize) && (numTrial < googleMaxNumTrial); numTrial += 1 {
 		// clear buffer
 		for i := 0; i < len(*idBuffer); i++ {
 			(*idBuffer)[i] = ""
 		}
-		url := buildGoogleUrl(query, currPageOffset)
-		isFinished = true
+		// build google url
+		url := buildGoogleUrl(query, currGooglePage, googlePageSize)
 		isStopped := false
 		// Start scraping on google search
 		c.Visit(url)
 		c.Wait()
 		// collect valid question ids
 		for i, qid := range *idBuffer {
-			if (currPageOffset == pageOffset) && (i < qidOffset) {
+			if (currGooglePage == googleStartPage) && (i < questionIdOffset) {
 				continue
 			}
 			if qid != "" {
-				isFinished = false
-				if len(questionIDs) >= pageSize {
+				if len(questionIDs) >= userPageSize {
 					isStopped = true
 					nextQuestionIdx = i
 					break
@@ -145,16 +162,17 @@ func googleSearch(
 				questionIDs = append(questionIDs, qid)
 			}
 		}
+		// update current google page if not stopped
 		if !isStopped {
-			currPageOffset += googleQueryPageSize
+			currGooglePage += googlePageSize
 		}
 	}
 
 	return GoogleResult{
 		QuestionIDs:     questionIDs,
 		NextQuestionIdx: nextQuestionIdx,
-		NextOffset:      currPageOffset,
-		IsFinished:      isFinished,
+		NextGooglePage:  currGooglePage,
+		IsFinished:      len(questionIDs) < userPageSize,
 	}
 }
 
@@ -164,10 +182,17 @@ func Google(param GoogleParam) GoogleResult {
 
 	// init id buffer and get collector
 	// init with length 10 (# of google search result)
-	idBuffer := make([]string, googleQueryPageSize)
+	idBuffer := make([]string, param.GooglePageSize)
 	collyCollector := newCollector(param.UserAgent, &idBuffer)
 	c := &CollyCollector{Collector: collyCollector}
 	return googleSearch(
-		param.Query, c, &idBuffer, param.Offset, param.PageSize, param.NextQuestionIdx,
+		param.Query,
+		c,
+		&idBuffer,
+		param.PageSize,
+		param.GoogleStartPage,
+		param.GoogleNextQuestionIdx,
+		param.GooglePageSize,
+		param.GoogleMaxNumTrial,
 	)
 }

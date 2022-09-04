@@ -35,10 +35,11 @@ func TestParseQuestionID(t *testing.T) {
 }
 
 func TestBuildGoogleUrl(t *testing.T) {
-	expected := "https://google.com/search?q=site%3A+stackoverflow.com+golang&start=11"
+	expected := "https://google.com/search?num=1&q=site%3A+stackoverflow.com+golang&start=11"
 	start := 11
 	query := "golang"
-	assert.Equal(t, expected, buildGoogleUrl(query, start), "Invalid google URL")
+	num := 1
+	assert.Equal(t, expected, buildGoogleUrl(query, start, num), "Invalid google URL")
 }
 
 func TestGoogleSearch(t *testing.T) {
@@ -46,11 +47,13 @@ func TestGoogleSearch(t *testing.T) {
 	idBuffer := make([]string, 10)
 	mockCollector := &MockCollector{&idBuffer, 10, 0, false}
 	expected := []string{"0", "1"}
+	googleMaxNumTrial := 5
+	googlePageSize := 10
 	result := googleSearch(
-		"test", mockCollector, &idBuffer, 0, 2, 0,
+		"test", mockCollector, &idBuffer, 2, 0, 0, googlePageSize, googleMaxNumTrial,
 	)
 	assert.Equal(t, expected, result.QuestionIDs, "Invalid QuestionIDs")
-	assert.Equal(t, 0, result.NextOffset, "Invalid NextOffset")
+	assert.Equal(t, 0, result.NextGooglePage, "Invalid NextGooglePage")
 	assert.Equal(t, 2, result.NextQuestionIdx, "Invalid NextQuestionIdx")
 	assert.Equal(t, false, result.IsFinished, "Invalid IsFinished")
 
@@ -58,18 +61,18 @@ func TestGoogleSearch(t *testing.T) {
 	mockCollector = &MockCollector{&idBuffer, 3, 0, false}
 	expected = []string{"0", "1", "2"}
 	result = googleSearch(
-		"test", mockCollector, &idBuffer, 0, 3, 0,
+		"test", mockCollector, &idBuffer, 3, 0, 0, googlePageSize, googleMaxNumTrial,
 	)
 	assert.Equal(t, expected, result.QuestionIDs, "Invalid QuestionIDs")
-	assert.Equal(t, 10, result.NextOffset, "Invalid NextOffset")
+	assert.Equal(t, googlePageSize, result.NextGooglePage, "Invalid NextGooglePage")
 	assert.Equal(t, 0, result.NextQuestionIdx, "Invalid NextQuestionIdx")
 	assert.Equal(t, false, result.IsFinished, "Invalid IsFinished")
 
-	// test3: pagesize: 4, result: 3, not finished
+	// test3: pagesize: 4, result: 3, finished
 	mockCollector = &MockCollector{&idBuffer, 3, 0, false}
 	expected = []string{"0", "1", "2"}
 	result = googleSearch(
-		"test", mockCollector, &idBuffer, 0, 4, 0,
+		"test", mockCollector, &idBuffer, 4, 0, 0, googlePageSize, googleMaxNumTrial,
 	)
 	assert.Equal(t, expected, result.QuestionIDs, "Invalid QuestionIDs")
 	assert.Equal(t, 0, result.NextQuestionIdx, "Invalid NextQuestionIdx")
