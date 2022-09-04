@@ -8,8 +8,8 @@ import (
 
 func main() {
 	result := search.Google(search.GoogleParam{
-		Query:    "golang",
-		PageSize: 10,
+		Query:    "machine learning",
+		PageSize: 5,
 	})
 	if len(result.QuestionIDs) == 0 {
 		log.Println("No results..")

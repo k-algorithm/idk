@@ -1,17 +1,29 @@
 package search
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-type MockCollector struct{}
+type MockCollector struct {
+	buffer      *[]string
+	numResult   int
+	numReturned int
+	isFinished  bool
+}
 
-func (m MockCollector) Visit(url string) error {
+func (m *MockCollector) Visit(url string) error {
+	i := 0
+	for m.numReturned < m.numResult && i < len(*m.buffer) {
+		(*m.buffer)[i] = strconv.Itoa(m.numReturned)
+		m.numReturned += 1
+		i += 1
+	}
 	return nil
 }
-func (m MockCollector) Wait() {
+func (m *MockCollector) Wait() {
 }
 
 func TestParseQuestionID(t *testing.T) {
@@ -30,13 +42,38 @@ func TestBuildGoogleUrl(t *testing.T) {
 }
 
 func TestGoogleSearch(t *testing.T) {
-	var mockCollector Collector = MockCollector{}
-	idBuffer := []string{"1", "2", "3"}
+	// test1: pagesize: 2, result: 10, not finished
+	idBuffer := make([]string, 10)
+	mockCollector := &MockCollector{&idBuffer, 10, 0, false}
+	expected := []string{"0", "1"}
 	result := googleSearch(
 		"test", mockCollector, &idBuffer, 0, 2, 0,
 	)
-	assert.Equal(t, result.QuestionIDs, idBuffer[:2], "Invalid QuestionIDs")
-	assert.Equal(t, result.NextOffset, 0, "Invalid NextOffset")
-	assert.Equal(t, result.NextQuestionIdx, 2, "Invalid NextQuestionIdx")
-	assert.Equal(t, result.IsFinished, false, "Invalid IsFinished")
+	assert.Equal(t, expected, result.QuestionIDs, "Invalid QuestionIDs")
+	assert.Equal(t, 0, result.NextOffset, "Invalid NextOffset")
+	assert.Equal(t, 2, result.NextQuestionIdx, "Invalid NextQuestionIdx")
+	assert.Equal(t, false, result.IsFinished, "Invalid IsFinished")
+
+	// test2: pagesize: 3, result: 3, not finished
+	idBuffer = make([]string, 3)
+	mockCollector = &MockCollector{&idBuffer, 3, 0, false}
+	expected = []string{"0", "1", "2"}
+	result = googleSearch(
+		"test", mockCollector, &idBuffer, 0, 3, 0,
+	)
+	assert.Equal(t, expected, result.QuestionIDs, "Invalid QuestionIDs")
+	assert.Equal(t, 3, result.NextOffset, "Invalid NextOffset")
+	assert.Equal(t, 0, result.NextQuestionIdx, "Invalid NextQuestionIdx")
+	assert.Equal(t, false, result.IsFinished, "Invalid IsFinished")
+
+	// test3: pagesize: 4, result: 3, not finished
+	idBuffer = make([]string, 4)
+	mockCollector = &MockCollector{&idBuffer, 3, 0, false}
+	expected = []string{"0", "1", "2"}
+	result = googleSearch(
+		"test", mockCollector, &idBuffer, 0, 4, 0,
+	)
+	assert.Equal(t, expected, result.QuestionIDs, "Invalid QuestionIDs")
+	assert.Equal(t, 0, result.NextQuestionIdx, "Invalid NextQuestionIdx")
+	assert.Equal(t, true, result.IsFinished, "Invalid IsFinished")
 }

@@ -117,10 +117,15 @@ func googleSearch(
 	questionIDs := make([]string, 0, pageSize)
 	nextQuestionIdx := 0
 	currPageOffset := pageOffset
-outerLoop:
+
 	for (len(questionIDs) < pageSize) && (!isFinished) {
+		// clear buffer
+		for i := 0; i < pageSize; i++ {
+			(*idBuffer)[i] = ""
+		}
 		url := buildGoogleUrl(query, pageOffset)
 		isFinished = true
+		isStopped := false
 		// Start scraping on google search
 		c.Visit(url)
 		c.Wait()
@@ -132,17 +137,16 @@ outerLoop:
 			if qid != "" {
 				isFinished = false
 				if len(questionIDs) >= pageSize {
+					isStopped = true
 					nextQuestionIdx = i
-					break outerLoop
+					break
 				}
 				questionIDs = append(questionIDs, qid)
 			}
 		}
-		// clear buffer
-		for i := 0; i < pageSize; i++ {
-			(*idBuffer)[i] = ""
+		if !isStopped {
+			currPageOffset += pageSize
 		}
-		currPageOffset += pageSize
 	}
 
 	return GoogleResult{
@@ -158,7 +162,8 @@ func Google(param GoogleParam) GoogleResult {
 	param.FillDefaults()
 
 	// init id buffer and get collector
-	idBuffer := make([]string, param.PageSize)
+	// init with length 10 (# of google search result)
+	idBuffer := make([]string, 10)
 	collyCollector := newCollector(param.UserAgent, &idBuffer)
 	c := &CollyCollector{Collector: collyCollector}
 	return googleSearch(
