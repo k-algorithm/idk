@@ -10,6 +10,7 @@ import (
 )
 
 const defaultUserAgent string = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0"
+const googleQueryPageSize int = 10
 
 type Collector interface {
 	Visit(url string) error
@@ -120,10 +121,10 @@ func googleSearch(
 
 	for (len(questionIDs) < pageSize) && (!isFinished) {
 		// clear buffer
-		for i := 0; i < pageSize; i++ {
+		for i := 0; i < len(*idBuffer); i++ {
 			(*idBuffer)[i] = ""
 		}
-		url := buildGoogleUrl(query, pageOffset)
+		url := buildGoogleUrl(query, currPageOffset)
 		isFinished = true
 		isStopped := false
 		// Start scraping on google search
@@ -145,7 +146,7 @@ func googleSearch(
 			}
 		}
 		if !isStopped {
-			currPageOffset += pageSize
+			currPageOffset += googleQueryPageSize
 		}
 	}
 
@@ -163,7 +164,7 @@ func Google(param GoogleParam) GoogleResult {
 
 	// init id buffer and get collector
 	// init with length 10 (# of google search result)
-	idBuffer := make([]string, 10)
+	idBuffer := make([]string, googleQueryPageSize)
 	collyCollector := newCollector(param.UserAgent, &idBuffer)
 	c := &CollyCollector{Collector: collyCollector}
 	return googleSearch(
