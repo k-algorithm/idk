@@ -55,19 +55,17 @@ func TestGoogleSearch(t *testing.T) {
 	assert.Equal(t, false, result.IsFinished, "Invalid IsFinished")
 
 	// test2: pagesize: 3, result: 3, not finished
-	idBuffer = make([]string, 3)
 	mockCollector = &MockCollector{&idBuffer, 3, 0, false}
 	expected = []string{"0", "1", "2"}
 	result = googleSearch(
 		"test", mockCollector, &idBuffer, 0, 3, 0,
 	)
 	assert.Equal(t, expected, result.QuestionIDs, "Invalid QuestionIDs")
-	assert.Equal(t, 3, result.NextOffset, "Invalid NextOffset")
+	assert.Equal(t, 10, result.NextOffset, "Invalid NextOffset")
 	assert.Equal(t, 0, result.NextQuestionIdx, "Invalid NextQuestionIdx")
 	assert.Equal(t, false, result.IsFinished, "Invalid IsFinished")
 
 	// test3: pagesize: 4, result: 3, not finished
-	idBuffer = make([]string, 4)
 	mockCollector = &MockCollector{&idBuffer, 3, 0, false}
 	expected = []string{"0", "1", "2"}
 	result = googleSearch(
