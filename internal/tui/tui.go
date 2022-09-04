@@ -12,7 +12,6 @@ type state int
 
 const (
 	showSearchView = iota
-	showQuestionView
 )
 
 type model struct {
