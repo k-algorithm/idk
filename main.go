@@ -21,9 +21,11 @@ var supportedOS = map[string]bool{
 
 func main() {
 	result := search.Google(search.GoogleParam{
-		Query:    "golang",
-		PageSize: 10,
+		Query:          "golang",
+		GooglePageSize: 15,
+		PageSize:       15,
 	})
+	log.Println(len(result.QuestionIDs))
 	if len(result.QuestionIDs) == 0 {
 		log.Println("No results..")
 		return
