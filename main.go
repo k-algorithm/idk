@@ -1,10 +1,23 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"runtime"
 
-	"github.com/k-algorithm/idk/search"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/k-algorithm/idk/internal/search"
+	"github.com/k-algorithm/idk/internal/tui"
 )
+
+var supportedOS = map[string]bool{
+	"linux":   true,
+	"freebsd": true,
+	"openbsd": true,
+	"netbsd":  true,
+	"darwin":  true,
+}
 
 func main() {
 	result := search.Google(search.GoogleParam{
@@ -17,17 +30,16 @@ func main() {
 		log.Println("No results..")
 		return
 	}
-	questions := search.Questions(result.QuestionIDs)
-	log.Println(questions)
-	qid := result.QuestionIDs[0]
-	log.Println("QuestionID:", qid)
-	question := search.QuestionDetail(qid)
-	log.Println("Title:", question.Title)
-	log.Println("Body:", question.Body)
-	answers := search.Answers(qid)
 
-	for i, answer := range answers {
-		log.Println("[Answer", i, "]", "score:", answer.Score)
-		log.Println(answer.Body)
+	log.Println(runtime.GOOS)
+	if !supportedOS[runtime.GOOS] {
+		fmt.Println("Current OS not supported. Refer to the documentation for more information.")
+		os.Exit(0)
+	}
+	p := tea.NewProgram(tui.InitializeModel(), tea.WithAltScreen())
+
+	if err := p.Start(); err != nil {
+		fmt.Printf("Alas, there's been an error: %v", err)
+		os.Exit(1)
 	}
 }
