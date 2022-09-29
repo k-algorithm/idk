@@ -17,7 +17,7 @@ const (
 type model struct {
 	state         state
 	query         textinput.Model
-	searchResult  string
+	qm  question.QuestionModel
 	width, height int
 	err           error
 }
@@ -44,10 +44,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				PageSize: 10,
 			})
 			questions := search.Questions(searchResult.QuestionIDs)
-			for i, question := range questions {
-				questionString += fmt.Sprintf("[Question %d] %s\n", i+1, question.Title)
-			}
-			m.searchResult = questionString
+			m.qm = question.InitialModel(questions)
 			return m, nil
 		}
 	}
@@ -60,12 +57,11 @@ func (m model) View() string {
 	if m.err != nil {
 		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.err)
 	}
-
 	return fmt.Sprintf(
 		"\nWrite questions here...\n\n%s\n\n%s\n\n%s",
 		m.query.View(),
 		"(ctrl+c to quit)",
-		m.searchResult,
+		m.qm.View(),
 	) + "\n"
 }
 
