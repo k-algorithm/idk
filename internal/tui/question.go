@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/k-algorithm/idk/internal/search"
@@ -36,15 +35,6 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, raw)
 }
 
-func InitialModel(qArr []search.Question) QuestionModel {
-	qItems := questionToItem(qArr)
-	l := list.New(qItems, itemDelegate{}, 0, 0)
-	l.Title = "Questions"
-	l.SetShowHelp(false)
-
-	return QuestionModel{list: l}
-}
-
 func questionToItem(qArr []search.Question) []list.Item {
 	items := make([]list.Item, len(qArr))
 	for i, q := range qArr {
@@ -54,8 +44,16 @@ func questionToItem(qArr []search.Question) []list.Item {
 }
 
 type QuestionModel struct {
-	list     list.Model
-	viewport viewport.Model
+	list list.Model
+}
+
+func InitialModel(qArr []search.Question) QuestionModel {
+	qItems := questionToItem(qArr)
+	l := list.New(qItems, itemDelegate{}, 0, 0)
+	l.Title = "Questions"
+	l.SetShowHelp(false)
+
+	return QuestionModel{list: l}
 }
 
 func (qm QuestionModel) Init() tea.Cmd {

@@ -8,16 +8,9 @@ import (
 	"github.com/k-algorithm/idk/internal/search"
 )
 
-type state int
-
-const (
-	showSearchView = iota
-)
-
 type model struct {
-	state         state
 	query         textinput.Model
-	qm  question.QuestionModel
+	qm            QuestionModel
 	width, height int
 	err           error
 }
@@ -38,13 +31,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyEnter:
-			questionString := ""
 			searchResult := search.Google(search.GoogleParam{
 				Query:    m.query.Value(),
 				PageSize: 10,
 			})
 			questions := search.Questions(searchResult.QuestionIDs)
-			m.qm = question.InitialModel(questions)
+			m.qm = InitialModel(questions)
 			return m, nil
 		}
 	}
