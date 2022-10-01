@@ -27,14 +27,13 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	}
 
 	raw := fmt.Sprintf("[Question %d] %s\n", index+1, qTitle)
-
 	if index == m.Index() {
-		line := ListSelectedListItemStyle.Render("> " + raw)
+		raw = ListSelectedListItemStyle.Render("> " + raw)
 	} else {
-		line := ListItemStyle.Render(raw)
+		raw = ListItemStyle.Render(raw)
 	}
 
-	fmt.Fprint(w, line)
+	fmt.Fprint(w, raw)
 }
 
 func InitialModel(qArr []search.Question) QuestionModel {
