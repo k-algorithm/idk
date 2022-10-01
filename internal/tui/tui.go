@@ -6,18 +6,21 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/k-algorithm/idk/internal/search"
+	"github.com/k-algorithm/idk/internal/tui/question"
 )
 
 type state int
 
 const (
-	showSearchView = iota
+	showIndexView = iota
+	showQuestionView
 )
 
 type model struct {
 	state         state
 	query         textinput.Model
 	searchResult  string
+	bq            question.BubbleQuestion
 	width, height int
 	err           error
 }
@@ -60,13 +63,17 @@ func (m model) View() string {
 	if m.err != nil {
 		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.err)
 	}
-
-	return fmt.Sprintf(
-		"\nWrite questions here...\n\n%s\n\n%s\n\n%s",
-		m.query.View(),
-		"(ctrl+c to quit)",
-		m.searchResult,
-	) + "\n"
+	switch m.state {
+	case showQuestionView:
+		return m.bq.View()
+	default:
+		return fmt.Sprintf(
+			"\nWrite questions here...\n\n%s\n\n%s\n\n%s",
+			m.query.View(),
+			m.searchResult,
+			"(ctrl+c to quit)",
+		) + "\n"
+	}
 }
 
 func InitializeModel() tea.Model {
