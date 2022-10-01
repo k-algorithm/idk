@@ -35,7 +35,7 @@ func TestParseQuestionID(t *testing.T) {
 }
 
 func TestBuildGoogleUrl(t *testing.T) {
-	expected := "https://google.com/search?num=1&q=site%3A+stackoverflow.com+golang&start=11"
+	expected := "https://google.com/search?num=1&q=site%3Ahttps%3A%2F%2Fstackoverflow.com%2Fquestions+golang&start=11"
 	start := 11
 	query := "golang"
 	num := 1

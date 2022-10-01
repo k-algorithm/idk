@@ -92,7 +92,7 @@ func buildGoogleUrl(query string, start int, num int) string {
 		Path:   "search",
 	}
 	q := u.Query()
-	q.Set("q", "site: stackoverflow.com "+query)
+	q.Set("q", "site:https://stackoverflow.com/questions "+query)
 	q.Set("start", strconv.Itoa(start))
 	q.Set("num", strconv.Itoa(num))
 	u.RawQuery = q.Encode()
