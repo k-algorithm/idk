@@ -22,6 +22,7 @@ type AnswersResponse struct {
 }
 
 type Question struct {
+	Id          int    `json:"question_id,omitempty"`
 	Title       string `json:"title,omitempty"`
 	Body        string `json:"body,omitempty"`
 	Score       int    `json:"score,omitempty"`
