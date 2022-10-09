@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/k-algorithm/idk/internal/search"
 	"github.com/k-algorithm/idk/internal/tui/question"
+	"google.golang.org/appengine/log"
 )
 
 type state int
@@ -19,6 +20,7 @@ const (
 type model struct {
 	state         state
 	query         textinput.Model
+	questions     []search.Question
 	searchResult  string
 	bq            question.BubbleQuestion
 	width, height int
@@ -41,13 +43,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyEnter:
+			// Note(marv): temporary code to test question view
+			if m.state == showIndexView && m.searchResult != "" {
+				m.state = showQuestionView
+				m.bq = question.InitializeModel(m.questions[0])
+				m.bq.Update(msg)
+				return m, cmd
+			}
+
 			questionString := ""
 			searchResult := search.Google(search.GoogleParam{
 				Query:    m.query.Value(),
 				PageSize: 10,
 			})
-			questions := search.Questions(searchResult.QuestionIDs)
-			for i, question := range questions {
+			m.questions = search.Questions(searchResult.QuestionIDs)
+			for i, question := range m.questions {
 				questionString += fmt.Sprintf("[Question %d] %s\n", i+1, question.Title)
 			}
 			m.searchResult = questionString
@@ -66,13 +76,16 @@ func (m model) View() string {
 	switch m.state {
 	case showQuestionView:
 		return m.bq.View()
-	default:
+	case showIndexView:
 		return fmt.Sprintf(
 			"\nWrite questions here...\n\n%s\n\n%s\n\n%s",
 			m.query.View(),
 			m.searchResult,
 			"(ctrl+c to quit)",
 		) + "\n"
+	default:
+		log.Errorf(nil, "Unknown state: %d", m.state)
+		return ""
 	}
 }
 

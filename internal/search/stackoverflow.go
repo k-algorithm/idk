@@ -34,6 +34,26 @@ type QuestionsResponse struct {
 	Items []Question `json:"items,omitempty"`
 }
 
+// TODO(marv): html escape, pretty print
+func (answer Answer) ToString() string {
+	return fmt.Sprintf("%s", answer.Body)
+}
+
+func AnswersToString(answers []Answer) string {
+	var answerStrs []string
+	for _, answer := range answers {
+		answerStrs = append(answerStrs, answer.ToString())
+	}
+	return strings.Join(answerStrs, "\n")
+}
+
+// TODO(marv): extract code snippsets from body
+func ExtractCodeSnippsetsFromAnswer(answer Answer) []string {
+	ret := []string{}
+	ret = append(ret, answer.ToString())
+	return ret
+}
+
 func buildStackOverflowUrl(path string, includeBody bool) string {
 	u := url.URL{
 		Scheme: "https",
