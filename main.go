@@ -17,6 +17,7 @@ var supportedOS = map[string]bool{
 	"openbsd": true,
 	"netbsd":  true,
 	"darwin":  true,
+	"windows": true,
 }
 
 func main() {
