@@ -20,6 +20,7 @@ type model struct {
 	searchResult  string
 	width, height int
 	err           error
+	dbgMode       bool
 }
 
 func (m model) Init() tea.Cmd {
@@ -40,8 +41,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			questionString := ""
 			searchResult := search.Google(search.GoogleParam{
-				Query:    m.query.Value(),
-				PageSize: 10,
+				Query:     m.query.Value(),
+				PageSize:  10,
+				DebugMode: m.dbgMode,
 			})
 			questions := search.Questions(searchResult.QuestionIDs)
 			for i, question := range questions {
@@ -69,7 +71,7 @@ func (m model) View() string {
 	) + "\n"
 }
 
-func InitializeModel() tea.Model {
+func InitializeModel(dbgMode bool) tea.Model {
 	query := textinput.New()
 	query.Placeholder = "Question"
 	query.Focus()
@@ -77,7 +79,8 @@ func InitializeModel() tea.Model {
 	query.Width = 20
 
 	return model{
-		query: query,
-		err:   nil,
+		query:   query,
+		err:     nil,
+		dbgMode: dbgMode,
 	}
 }
