@@ -1,17 +1,23 @@
 package search
 
 import (
+	"fmt"
 	"log"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/gocolly/colly/v2"
+	"github.com/patrickmn/go-cache"
 )
 
 const defaultUserAgent string = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0"
 const defaultGooglePageSize int = 10
+
+var googleCache *cache.Cache
 
 type Collector interface {
 	Visit(url string) error
@@ -59,6 +65,22 @@ func (p *GoogleParam) FillDefaults() {
 	if p.GoogleMaxNumTrial == 0 {
 		p.GoogleMaxNumTrial = int(p.PageSize/p.GooglePageSize) + 1
 	}
+}
+
+func (p *GoogleParam) CacheKey() string {
+	v := reflect.ValueOf(*p)
+	values := make([]string, reflect.Indirect(v).NumField())
+	for i := 0; i < v.NumField(); i++ {
+		values[i] = fmt.Sprintf("%v", v.Field(i).Interface())
+	}
+	return strings.Join(values, ",")
+}
+
+func getGoogleCache() *cache.Cache {
+	if googleCache == nil {
+		googleCache = cache.New(5*time.Minute, 10*time.Minute)
+	}
+	return googleCache
 }
 
 func parseQuestionID(url string) string {
@@ -177,15 +199,23 @@ func googleSearch(
 }
 
 func Google(param GoogleParam) GoogleResult {
-	// fill default params
+	// fill default params and get key for caching
 	param.FillDefaults()
+	cacheKey := param.CacheKey()
+
+	// find cache
+	gcache := getGoogleCache()
+	cachedSearchResult, found := gcache.Get(cacheKey)
+	if found {
+		return cachedSearchResult.(GoogleResult)
+	}
 
 	// init id buffer and get collector
 	// init with length 10 (# of google search result)
 	idBuffer := make([]string, param.GooglePageSize)
 	collyCollector := newCollector(param.UserAgent, &idBuffer)
 	c := &CollyCollector{Collector: collyCollector}
-	return googleSearch(
+	searchResult := googleSearch(
 		param.Query,
 		c,
 		&idBuffer,
@@ -195,4 +225,7 @@ func Google(param GoogleParam) GoogleResult {
 		param.GooglePageSize,
 		param.GoogleMaxNumTrial,
 	)
+	// cache result and return
+	gcache.Set(cacheKey, searchResult, cache.DefaultExpiration)
+	return searchResult
 }
