@@ -1,8 +1,10 @@
 package search
 
 import (
+	"encoding/json"
 	"log"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"unicode"
@@ -44,6 +46,7 @@ type GoogleParam struct {
 	GoogleMaxNumTrial     int
 	GooglePageSize        int
 	UserAgent             string
+	DebugMode             bool
 }
 
 func (p *GoogleParam) FillDefaults() {
@@ -176,9 +179,27 @@ func googleSearch(
 	}
 }
 
+func loadVector() GoogleResult {
+	jsonFile, err := os.Open("./vects/google_result.json")
+	decoder := json.NewDecoder(jsonFile)
+	googleResult := new(GoogleResult)
+	err = decoder.Decode(googleResult)
+	if err != nil {
+		panic(err)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	return *googleResult
+}
+
 func Google(param GoogleParam) GoogleResult {
 	// fill default params
 	param.FillDefaults()
+
+	if param.DebugMode {
+		return loadVector()
+	}
 
 	// init id buffer and get collector
 	// init with length 10 (# of google search result)

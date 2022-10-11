@@ -1,13 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/k-algorithm/idk/internal/search"
 	"github.com/k-algorithm/idk/internal/tui"
 )
 
@@ -17,26 +17,22 @@ var supportedOS = map[string]bool{
 	"openbsd": true,
 	"netbsd":  true,
 	"darwin":  true,
+	"windows": true,
 }
 
 func main() {
-	result := search.Google(search.GoogleParam{
-		Query:          "golang",
-		GooglePageSize: 15,
-		PageSize:       15,
-	})
-	log.Println(len(result.QuestionIDs))
-	if len(result.QuestionIDs) == 0 {
-		log.Println("No results..")
-		return
+	// parse cli flags
+	dbgModePtr := flag.Bool("dbg_mode", false, "Run debug mode.")
+	flag.Parse()
+	if *dbgModePtr {
+		log.Println("DebugMode entered.")
 	}
 
-	log.Println(runtime.GOOS)
 	if !supportedOS[runtime.GOOS] {
-		fmt.Println("Current OS not supported. Refer to the documentation for more information.")
+		fmt.Printf("Current OS (%s) not supported. Refer to the documentation for more information.", runtime.GOOS)
 		os.Exit(0)
 	}
-	p := tea.NewProgram(tui.InitializeModel(), tea.WithAltScreen())
+	p := tea.NewProgram(tui.InitializeModel(*dbgModePtr), tea.WithAltScreen())
 
 	if err := p.Start(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
