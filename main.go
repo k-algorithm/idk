@@ -7,7 +7,6 @@ import (
 	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/k-algorithm/idk/internal/search"
 	"github.com/k-algorithm/idk/internal/tui"
 )
 
@@ -20,16 +19,16 @@ var supportedOS = map[string]bool{
 }
 
 func main() {
-	result := search.Google(search.GoogleParam{
-		Query:          "golang",
-		GooglePageSize: 15,
-		PageSize:       15,
-	})
-	log.Println(len(result.QuestionIDs))
-	if len(result.QuestionIDs) == 0 {
-		log.Println("No results..")
-		return
-	}
+	//result := search.Google(search.GoogleParam{
+	//	Query:          "golang",
+	//	GooglePageSize: 15,
+	//	PageSize:       15,
+	//})
+	//log.Println(len(result.QuestionIDs))
+	//if len(result.QuestionIDs) == 0 {
+	//	log.Println("No results..")
+	//	return
+	//}
 
 	log.Println(runtime.GOOS)
 	if !supportedOS[runtime.GOOS] {

@@ -2,40 +2,39 @@ package tui
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/k-algorithm/idk/internal/search"
+	"io"
 )
 
 type item string
 
 func (i item) FilterValue() string { return string(i) }
 
-type itemDelegate struct{}
+type ItemDelegate struct{}
 
-func (d itemDelegate) Height() int                               { return 1 }
-func (d itemDelegate) Spacing() int                              { return 0 }
-func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+func (d ItemDelegate) Height() int                               { return 1 }
+func (d ItemDelegate) Spacing() int                              { return 0 }
+func (d ItemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	qTitle, ok := listItem.(item)
 	if !ok {
 		return
 	}
 
 	raw := fmt.Sprintf("[Question %d] %s\n", index+1, qTitle)
+	fn := ListItemStyle.Render
 	if index == m.Index() {
-		raw = ListSelectedListItemStyle.Render("> " + raw)
-	} else {
-		raw = ListItemStyle.Render(raw)
+		fn = func(s string) string {
+			return ListSelectedListItemStyle.Render("> " + s)
+		}
 	}
 
-	fmt.Fprint(w, raw)
+	fmt.Fprint(w, fn(raw))
 }
 
-func questionToItem(qArr []search.Question) []list.Item {
+func QuestionToItem(qArr []search.Question) []list.Item {
 	items := make([]list.Item, len(qArr))
 	for i, q := range qArr {
 		items[i] = item(q.Title)
@@ -48,10 +47,10 @@ type QuestionModel struct {
 }
 
 func InitialModel(qArr []search.Question) QuestionModel {
-	qItems := questionToItem(qArr)
-	l := list.New(qItems, itemDelegate{}, 0, 0)
+	qItems := QuestionToItem(qArr)
+	l := list.New(qItems, ItemDelegate{}, 0, 0)
 	l.Title = "Questions"
-	l.SetShowHelp(false)
+	l.SetShowHelp(true)
 
 	return QuestionModel{list: l}
 }
@@ -63,10 +62,8 @@ func (qm QuestionModel) Init() tea.Cmd {
 func (qm QuestionModel) Update(msg tea.Msg) (QuestionModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		horizontal, vertical := ListStyle.GetFrameSize()
-		paginatorHeight := lipgloss.Height(qm.list.Paginator.View())
-
-		qm.list.SetSize(msg.Width-horizontal, msg.Height-vertical-paginatorHeight)
+		qm.list.SetWidth(msg.Width)
+		return qm, nil
 	}
 
 	var cmd tea.Cmd
